@@ -1,0 +1,14 @@
+{
+  "name": "OdooScan",
+  "short_name": "OdooScan",
+  "description": "Kartvizit ve formdan Odoo ERP'ye bilgi aktarma",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f0e17",
+  "theme_color": "#0f0e17",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
