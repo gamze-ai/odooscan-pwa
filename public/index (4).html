@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>OdooScan</title>
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="theme-color" content="#0f0e17"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="OdooScan"/>
+  <link rel="apple-touch-icon" href="/icons/icon-192.png"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#0f0e17; --surface:#1a1927; --surface2:#232235;
+      --accent:#e8c547; --accent2:#7c6af7; --text:#fffffe;
+      --muted:#a7a9be; --danger:#ff6b6b; --success:#51cf66; --warn:#ffa94d;
+      --radius:16px; --font-head:'Syne',sans-serif; --font-body:'DM Sans',sans-serif;
+    }
+    html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-body);}
+    #app{min-height:100dvh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;}
+    .screen{display:none;flex-direction:column;flex:1;animation:fadeUp .3s ease;}
+    .screen.active{display:flex;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    .topbar{padding:52px 24px 20px;background:linear-gradient(180deg,var(--surface) 0%,transparent 100%);flex-shrink:0;}
+    .topbar-row{display:flex;align-items:center;justify-content:space-between;}
+    .topbar h1{font-family:var(--font-head);font-size:22px;font-weight:800;letter-spacing:-.5px;}
+    .topbar h1 span{color:var(--accent);}
+    .icon-btn{width:40px;height:40px;border-radius:12px;background:var(--surface2);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:transform .15s;}
+    .icon-btn:active{transform:scale(.92);}
+    .body{flex:1;overflow-y:auto;padding:0 20px 32px;-webkit-overflow-scrolling:touch;}
+    .status-pill{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:50px;padding:10px 16px;margin-bottom:28px;font-size:13px;color:var(--muted);}
+    .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+    .dot.green{background:var(--success);box-shadow:0 0 8px var(--success);}
+    .dot.orange{background:var(--warn);}
+    .action-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;}
+    .action-card{background:var(--surface);border-radius:var(--radius);padding:20px 16px;border:1px solid transparent;cursor:pointer;transition:all .2s;text-align:left;display:flex;flex-direction:column;gap:10px;-webkit-tap-highlight-color:transparent;}
+    .action-card:active{transform:scale(.96);}
+    .action-card.accent{border-color:var(--accent);}
+    .action-card.purple{border-color:var(--accent2);}
+    .action-card.bulk{border-color:var(--warn);grid-column:1/-1;flex-direction:row;align-items:center;}
+    .action-card .ac-icon{font-size:28px;}
+    .action-card .ac-title{font-family:var(--font-head);font-size:14px;font-weight:700;}
+    .action-card .ac-sub{font-size:11px;color:var(--muted);}
+    .how-card{background:var(--surface);border-radius:var(--radius);padding:20px;border-left:3px solid var(--accent2);}
+    .how-card h3{font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--accent2);margin-bottom:12px;letter-spacing:.5px;}
+    .how-step{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px;font-size:13px;color:var(--muted);}
+    .how-num{width:22px;height:22px;border-radius:50%;background:var(--accent2);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+    .upload-zone{background:var(--surface);border-radius:var(--radius);border:2px dashed var(--surface2);padding:36px 24px;text-align:center;cursor:pointer;transition:border-color .2s;margin-bottom:20px;}
+    .upload-zone:active,.upload-zone.drag{border-color:var(--accent);}
+    .upload-zone .uz-icon{font-size:48px;margin-bottom:12px;}
+    .upload-zone h3{font-family:var(--font-head);font-size:17px;font-weight:700;margin-bottom:6px;}
+    .upload-zone p{font-size:13px;color:var(--muted);}
+    #file-input{display:none;}
+    #preview-img{width:100%;border-radius:var(--radius);margin-bottom:20px;display:none;max-height:260px;object-fit:contain;background:var(--surface);}
+    .btn-primary{width:100%;padding:17px;border-radius:var(--radius);background:var(--accent);border:none;cursor:pointer;font-family:var(--font-head);font-size:16px;font-weight:700;color:#0f0e17;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+    .btn-primary:active{transform:scale(.97);opacity:.9;}
+    .btn-primary:disabled{opacity:.4;cursor:not-allowed;}
+    .btn-secondary{width:100%;padding:14px;border-radius:var(--radius);background:transparent;border:1px solid var(--surface2);cursor:pointer;font-family:var(--font-head);font-size:14px;font-weight:600;color:var(--muted);transition:all .2s;margin-top:10px;}
+    .btn-secondary:active{background:var(--surface);}
+    .btn-danger{width:100%;padding:14px;border-radius:var(--radius);background:transparent;border:1px solid var(--danger);cursor:pointer;font-family:var(--font-head);font-size:14px;font-weight:600;color:var(--danger);transition:all .2s;margin-top:10px;}
+    .ai-loader{display:none;flex-direction:column;align-items:center;padding:40px 0;gap:16px;}
+    .ai-loader.show{display:flex;}
+    .pulse-ring{width:64px;height:64px;border-radius:50%;border:3px solid var(--accent2);animation:pulse-ring 1.4s ease infinite;}
+    @keyframes pulse-ring{0%{transform:scale(.8);opacity:.5}50%{transform:scale(1.1);opacity:1}100%{transform:scale(.8);opacity:.5}}
+    .ai-loader p{font-size:14px;color:var(--muted);font-family:var(--font-head);}
+    .section-label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1.2px;margin:20px 0 10px;font-family:var(--font-head);}
+    .field-row{margin-bottom:10px;}
+    .field-label{font-size:11px;font-weight:600;color:var(--accent2);margin-bottom:5px;letter-spacing:.4px;}
+    .field-input{width:100%;background:var(--surface);border:1px solid var(--surface2);border-radius:10px;padding:12px 14px;color:var(--text);font-family:var(--font-body);font-size:14px;transition:border-color .2s;outline:none;}
+    .field-input:focus{border-color:var(--accent2);}
+    .match-header{background:var(--surface);border-radius:var(--radius);padding:18px;margin-bottom:20px;}
+    .match-header .name{font-family:var(--font-head);font-size:20px;font-weight:800;}
+    .candidate-card{background:var(--surface);border-radius:var(--radius);border:1.5px solid var(--surface2);padding:16px;margin-bottom:10px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:12px;-webkit-tap-highlight-color:transparent;}
+    .candidate-card:active{transform:scale(.97);}
+    .candidate-card.exact{border-color:var(--success);}
+    .candidate-card.high{border-color:var(--warn);}
+    .candidate-card.medium{border-color:var(--danger);}
+    .candidate-info{flex:1;}
+    .candidate-name{font-family:var(--font-head);font-size:15px;font-weight:700;}
+    .candidate-company{font-size:12px;color:var(--muted);margin-top:3px;}
+    .score-badge{padding:5px 10px;border-radius:20px;font-size:12px;font-weight:700;font-family:var(--font-head);flex-shrink:0;}
+    .score-badge.exact{background:var(--success);color:#0f0e17;}
+    .score-badge.high{background:var(--warn);color:#0f0e17;}
+    .score-badge.medium{background:var(--danger);color:#fff;}
+    .divider{display:flex;align-items:center;gap:10px;margin:16px 0;}
+    .divider-line{flex:1;height:1px;background:var(--surface2);}
+    .divider-txt{font-size:12px;color:var(--muted);}
+    .step-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px;}
+    .step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:var(--font-head);}
+    .step-dot.done{background:var(--success);color:#0f0e17;}
+    .step-dot.active{background:var(--accent);color:#0f0e17;}
+    .step-dot.idle{background:var(--surface2);color:var(--muted);}
+    .step-line{width:32px;height:2px;}
+    .step-line.done{background:var(--success);}
+    .step-line.idle{background:var(--surface2);}
+    .result-hero{text-align:center;padding:32px 0 24px;}
+    .result-circle{width:88px;height:88px;border-radius:50%;background:var(--success);margin:0 auto 20px;display:flex;align-items:center;justify-content:center;font-size:42px;box-shadow:0 0 40px rgba(81,207,102,.35);animation:pop .5s cubic-bezier(.175,.885,.32,1.275);}
+    @keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+    .result-title{font-family:var(--font-head);font-size:26px;font-weight:800;}
+    .result-sub{color:var(--muted);font-size:14px;margin-top:6px;}
+    .result-card{background:var(--surface);border-radius:var(--radius);padding:18px;margin-bottom:12px;}
+    .result-card h4{font-family:var(--font-head);font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:12px;}
+    .result-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+    .result-badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+    .result-badge.contact{background:rgba(81,207,102,.2);color:var(--success);}
+    .result-badge.module{background:rgba(124,106,247,.2);color:var(--accent2);}
+    .result-badge.existed{background:rgba(255,169,77,.2);color:var(--warn);}
+    .result-val{font-size:14px;}
+    .settings-section{margin-bottom:24px;}
+    .settings-section h3{font-family:var(--font-head);font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1.2px;margin-bottom:12px;}
+    .settings-card{background:var(--surface);border-radius:var(--radius);padding:18px;}
+    .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface2);color:var(--text);padding:12px 24px;border-radius:50px;font-size:14px;font-weight:500;z-index:999;transition:transform .3s cubic-bezier(.175,.885,.32,1.275);white-space:nowrap;pointer-events:none;}
+    .toast.show{transform:translateX(-50%) translateY(0);}
+    .toast.error{background:var(--danger);color:#fff;}
+    .toast.success{background:var(--success);color:#0f0e17;}
+    .bottom-nav{display:flex;border-top:1px solid var(--surface2);background:var(--bg);flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,8px);}
+    .nav-item{flex:1;padding:12px 0;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;border:none;background:transparent;color:var(--muted);font-size:10px;font-family:var(--font-body);transition:color .2s;-webkit-tap-highlight-color:transparent;}
+    .nav-item.active{color:var(--accent);}
+    .nav-icon{font-size:20px;}
+    .hist-item{background:var(--surface);border-radius:var(--radius);padding:16px;margin-bottom:10px;}
+    .hist-name{font-family:var(--font-head);font-size:15px;font-weight:700;}
+    .hist-company{font-size:12px;color:var(--muted);margin-top:3px;}
+    .hist-footer{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;}
+    .hist-date{font-size:11px;color:var(--muted);}
+    .empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+    .empty-state .ei{font-size:52px;margin-bottom:16px;}
+    .empty-state p{font-size:15px;}
+    .body::-webkit-scrollbar{display:none;}
+    .body{-ms-overflow-style:none;scrollbar-width:none;}
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- LOGIN -->
+  <div class="screen" id="screen-login">
+    <div class="topbar">
+      <div class="topbar-row">
+        <h1>Odoo<span>Scan</span></h1>
+        <div style="width:40px"></div>
+      </div>
+    </div>
+    <div class="body" style="display:flex;flex-direction:column;justify-content:center;padding-top:40px">
+      <div style="text-align:center;margin-bottom:40px">
+        <div style="font-size:56px;margin-bottom:16px">🔐</div>
+        <div style="font-family:var(--font-head);font-size:22px;font-weight:800;margin-bottom:8px">Giriş Yap</div>
+        <div style="font-size:13px;color:var(--muted)">Odoo hesabınızla giriş yapın</div>
+      </div>
+      <div style="background:var(--surface);border-radius:var(--radius);padding:24px;display:flex;flex-direction:column;gap:14px">
+        <div class="field-row">
+          <div class="field-label">E-posta</div>
+          <input class="field-input" id="login-email" type="email" placeholder="odoo@sirket.com" autocomplete="email"/>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Şifre</div>
+          <input class="field-input" id="login-password" type="password" placeholder="••••••••" autocomplete="current-password"
+            onkeydown="if(event.key==='Enter') doLogin()"/>
+        </div>
+        <button class="btn-primary" id="login-btn" onclick="doLogin()">🔑 Giriş Yap</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div class="screen active" id="screen-home">
+    <div class="topbar">
+      <div class="topbar-row">
+        <h1>Odoo<span>Scan</span></h1>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span id="current-user-name" style="font-size:11px;color:var(--muted);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+          <button class="icon-btn" id="home-settings-btn" onclick="showScreen('settings')" title="Ayarlar">⚙️</button>
+          <button class="icon-btn" onclick="doLogout()" title="Çıkış">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="body">
+      <div class="status-pill">
+        <div class="dot orange" id="status-dot"></div>
+        <span id="status-text">Odoo bağlantısı kurulmadı</span>
+      </div>
+      <div class="action-grid">
+        <div class="action-card accent" onclick="startScan('form')">
+          <div class="ac-icon">📋</div>
+          <div class="ac-title">Form Tara</div>
+          <div class="ac-sub">Fuar görüşme formu</div>
+        </div>
+        <div class="action-card" onclick="startScan('businessCard')">
+          <div class="ac-icon">📸</div>
+          <div class="ac-title">Kartvizit Tara</div>
+          <div class="ac-sub">Kartvizit fotoğrafı</div>
+        </div>
+        <div class="action-card purple" onclick="startScan('both')">
+          <div class="ac-icon">📋📸</div>
+          <div class="ac-title">Form + Kartvizit</div>
+          <div class="ac-sub">İkisini birlikte tara</div>
+        </div>
+        <div class="action-card" onclick="showScreen('history')">
+          <div class="ac-icon">🗂️</div>
+          <div class="ac-title">Geçmiş</div>
+          <div class="ac-sub" id="hist-count-label">0 tarama</div>
+        </div>
+        <div class="action-card bulk" onclick="startBulkUpload()">
+          <div class="ac-icon">📦</div>
+          <div style="flex:1">
+            <div class="ac-title">Toplu Yükleme</div>
+            <div class="ac-sub">Birden fazla form/kartvizit yükle</div>
+          </div>
+        </div>
+      </div>
+      <div class="how-card">
+        <h3>NASIL ÇALIŞIR</h3>
+        <div class="how-step"><div class="how-num">1</div><span>Belgeyi fotoğrafla veya yükle</span></div>
+        <div class="how-step"><div class="how-num">2</div><span>AI bilgileri otomatik çıkarır</span></div>
+        <div class="how-step"><div class="how-num">3</div><span>Mükerrer kontak kontrolü yapılır</span></div>
+        <div class="how-step"><div class="how-num">4</div><span>Odoo'ya tek tuşla kaydedilir</span></div>
+      </div>
+    </div>
+    <nav class="bottom-nav">
+      <button class="nav-item active" onclick="showScreen('home')"><span class="nav-icon">🏠</span>Ana</button>
+      <button class="nav-item" onclick="showScreen('history')"><span class="nav-icon">🗂️</span>Geçmiş</button>
+      <button class="nav-item" id="nav-settings-btn" onclick="showScreen('settings')"><span class="nav-icon">⚙️</span>Ayarlar</button>
+    </nav>
+  </div>
+
+  <!-- UPLOAD -->
+  <div class="screen" id="screen-upload">
+    <div class="topbar">
+      <div class="topbar-row">
+        <button class="icon-btn" onclick="showScreen('home')">←</button>
+        <h1 id="upload-title">Belge <span>Tara</span></h1>
+        <div style="width:40px"></div>
+      </div>
+    </div>
+    <div class="body">
+      <input type="file" id="file-input" accept="image/*,application/pdf"/>
+      <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+        <div class="uz-icon" id="uz-icon">📸</div>
+        <h3 id="uz-title">Fotoğraf Çek veya Yükle</h3>
+        <p id="uz-sub">Kartvizit, form veya PDF</p>
+      </div>
+      <img id="preview-img" alt="Önizleme"/>
+      <div class="ai-loader" id="ai-loader">
+        <div class="pulse-ring"></div>
+        <p id="ai-msg">AI bilgileri çıkarıyor...</p>
+      </div>
+      <button class="btn-primary" id="extract-btn" onclick="doExtract()" disabled>
+        <span>✨</span> Bilgileri Çıkar
+      </button>
+      <button class="btn-secondary" onclick="showScreen('home')">İptal</button>
+    </div>
+  </div>
+
+  <!-- PREVIEW -->
+  <div class="screen" id="screen-preview">
+    <div class="topbar">
+      <div class="topbar-row">
+        <button class="icon-btn" onclick="showScreen('upload')">←</button>
+        <h1>Bilgileri <span>Düzenle</span></h1>
+        <div style="width:40px"></div>
+      </div>
+    </div>
+    <div class="body">
+      <p class="section-label">KONTİK BİLGİLERİ</p>
+      <div id="contact-fields"></div>
+      <p class="section-label" id="custom-section-label" style="display:none">ÖZEL MODÜL ALANLARI</p>
+      <div id="custom-fields-container"></div>
+      <button class="btn-primary" onclick="goToMatchScreen()" style="margin-top:16px">Kontak Kontrolüne Geç →</button>
+      <button class="btn-secondary" onclick="doExtract()">🔄 Tekrar Çıkar</button>
+    </div>
+  </div>
+
+  <!-- MATCH -->
+  <div class="screen" id="screen-match">
+    <div class="topbar">
+      <div class="topbar-row">
+        <button class="icon-btn" id="match-back-btn">←</button>
+        <h1 id="match-title">Kontak <span>Kontrolü</span></h1>
+        <div style="width:40px"></div>
+      </div>
+    </div>
+    <div class="body" id="match-body">
+      <div class="ai-loader show">
+        <div class="pulse-ring"></div>
+        <p>Odoo'da aranıyor...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="screen" id="screen-result">
+    <div class="body">
+      <div class="result-hero">
+        <div class="result-circle">✓</div>
+        <div class="result-title">Kaydedildi!</div>
+        <div class="result-sub">Odoo'ya başarıyla aktarıldı</div>
+      </div>
+      <div id="result-cards"></div>
+      <button class="btn-primary" id="odoo-link-btn" style="display:none">🔗 Odoo'da Görüntüle</button>
+      <button class="btn-secondary" onclick="showScreen('home')">📸 Yeni Belge Tara</button>
+      <button class="btn-secondary" onclick="showScreen('history')">Geçmişi Görüntüle</button>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="screen" id="screen-history">
+    <div class="topbar">
+      <div class="topbar-row">
+        <button class="icon-btn" onclick="showScreen('home')">←</button>
+        <h1>Tarama <span>Geçmişi</span></h1>
+        <button class="icon-btn" onclick="clearHistory()">🗑</button>
+      </div>
+    </div>
+    <div class="body" id="history-body"></div>
+    <nav class="bottom-nav">
+      <button class="nav-item" onclick="showScreen('home')"><span class="nav-icon">🏠</span>Ana</button>
+      <button class="nav-item active" onclick="showScreen('history')"><span class="nav-icon">🗂️</span>Geçmiş</button>
+      <button class="nav-item" onclick="showScreen('settings')"><span class="nav-icon">⚙️</span>Ayarlar</button>
+    </nav>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="screen-settings">
+    <div class="topbar">
+      <div class="topbar-row">
+        <button class="icon-btn" onclick="showScreen('home')">←</button>
+        <h1>Ayar<span>lar</span></h1>
+        <div style="width:40px"></div>
+      </div>
+    </div>
+    <div class="body">
+      <div class="settings-section">
+        <h3>BACKEND API</h3>
+        <div class="settings-card">
+          <div class="field-row">
+            <div class="field-label">Backend URL</div>
+            <input class="field-input" id="cfg-backend" placeholder="https://odooscan-api.yourserver.com" type="url"/>
+            <div style="font-size:11px;color:var(--muted);margin-top:6px">OCR + AI işleme yapan Python sunucusu</div>
+          </div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h3>ODOO BAĞLANTISI</h3>
+        <div class="settings-card">
+          <div class="field-row">
+            <div class="field-label">Odoo URL</div>
+            <input class="field-input" id="cfg-url" placeholder="https://sirket.odoo.com" type="url"/>
+          </div>
+          <div class="field-row">
+            <div class="field-label">Veritabanı</div>
+            <input class="field-input" id="cfg-db" placeholder="sirket_db"/>
+          </div>
+          <div class="field-row">
+            <div class="field-label">Kullanıcı Adı</div>
+            <input class="field-input" id="cfg-user" placeholder="admin@sirket.com" type="email"/>
+          </div>
+          <div class="field-row">
+            <div class="field-label">API Key</div>
+            <input class="field-input" id="cfg-key" placeholder="Odoo > Tercihler > API Anahtarı" type="password"/>
+          </div>
+          <button class="btn-primary" onclick="testConnection()" style="margin-top:8px">🔌 Bağlantıyı Test Et</button>
+          <div id="conn-result" style="margin-top:10px;font-size:13px;display:none"></div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h3>ÖZEL MODÜL</h3>
+        <div class="settings-card">
+          <div class="field-row">
+            <div class="field-label">Modül Teknik Adı</div>
+            <input class="field-input" id="cfg-module" placeholder="x_scanned_document"/>
+            <div style="font-size:11px;color:var(--muted);margin-top:6px">Studio'daki teknik ad</div>
+          </div>
+          <div class="field-row" style="margin-top:14px">
+            <div class="field-label">Özel Alan Tanımları</div>
+            <div id="custom-fields-list"></div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <input class="field-input" id="new-field-key" placeholder="alan_adi" style="flex:1"/>
+              <input class="field-input" id="new-field-label" placeholder="Etiket" style="flex:1"/>
+              <button onclick="addCustomField()" style="background:var(--accent2);border:none;color:#fff;border-radius:10px;padding:0 14px;font-size:18px;cursor:pointer">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="saveSettings()">💾 Ayarları Kaydet</button>
+      <button class="btn-danger" onclick="clearAllData()">🗑 Tüm Verileri Temizle</button>
+    </div>
+    <nav class="bottom-nav">
+      <button class="nav-item" onclick="showScreen('home')"><span class="nav-icon">🏠</span>Ana</button>
+      <button class="nav-item" onclick="showScreen('history')"><span class="nav-icon">🗂️</span>Geçmiş</button>
+      <button class="nav-item active" onclick="showScreen('settings')"><span class="nav-icon">⚙️</span>Ayarlar</button>
+    </nav>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+<script src="/app.js?v=3"></script>
+</body>
+</html>
