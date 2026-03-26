@@ -333,11 +333,11 @@ function startScan(mode) {
 
   const titles = { form: 'Form <span>Tara</span>', businessCard: 'Kartvizit <span>Tara</span>', both: 'Form + Kartvizit <span>Tara</span>' };
   const icons = { form: '📋', businessCard: '📸', both: '📋📸' };
-  const subs = { form: 'Fuar görüşme formu fotoğrafı', businessCard: 'Kartvizit fotoğrafı', both: 'Form + kartvizit birlikte' };
+  const subs = { form: 'Fuar görüşme formu rafı', businessCard: 'Kartvizit rafı', both: 'Form + kartvizit birlikte' };
 
   document.getElementById('upload-title').innerHTML = titles[mode];
   document.getElementById('uz-icon').textContent = icons[mode];
-  document.getElementById('uz-title').textContent = 'Fotoğraf Çek veya Yükle';
+  document.getElementById('uz-title').textContent = 'Fotoğraf/PDF Çek veya Yükle';
   document.getElementById('uz-sub').textContent = subs[mode];
 
   const input = document.getElementById('file-input');
